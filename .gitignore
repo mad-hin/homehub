@@ -1,0 +1,16 @@
+# Binary
+homehub
+
+# Frontend build
+web/dist/
+web/node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.claude/
+
+# Config (contains personal URLs)
+config.json

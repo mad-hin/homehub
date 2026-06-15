@@ -1,0 +1,60 @@
+{
+  "greeting": "Good afternoon, User.",
+  "search": {
+    "engines": [
+      { "name": "DuckDuckGo", "url": "https://duckduckgo.com/?q=", "prefix": "/d" },
+      { "name": "Google",     "url": "https://www.google.com/search?q=", "prefix": "/g" },
+      { "name": "YouTube",    "url": "https://www.youtube.com/results?search_query=", "prefix": "/y" }
+    ]
+  },
+  "categories": [
+    {
+      "name": "Infrastructure",
+      "label": "SYSTEM & NETWORK",
+      "apps": [
+        { "name": "Proxmox",  "url": "https://proxmox.local:8006", "icon": "dns",      "label": "VIRTUALIZATION" },
+        { "name": "Pi-hole",  "url": "http://pihole.local/admin",  "icon": "security", "label": "AD BLOCKING" },
+        { "name": "Portainer","url": "https://portainer.local",    "icon": "deployed_code", "label": "CONTAINERS" }
+      ]
+    },
+    {
+      "name": "Media",
+      "label": "ENTERTAINMENT",
+      "apps": [
+        { "name": "Jellyfin", "url": "https://jellyfin.local", "icon": "live_tv",     "label": "MEDIA SERVER" },
+        { "name": "Sonarr",   "url": "https://sonarr.local",   "icon": "tv",          "label": "TV SERIES" },
+        { "name": "Radarr",   "url": "https://radarr.local",   "icon": "movie",       "label": "MOVIES" }
+      ]
+    }
+  ],
+  "bookmarks": [
+    {
+      "name": "Dev",
+      "label": "DEVELOPMENT",
+      "links": [
+        { "name": "GitHub", "url": "https://github.com" },
+        { "name": "Cloudflare", "url": "https://dash.cloudflare.com" }
+      ]
+    },
+    {
+      "name": "Docs",
+      "label": "DOCUMENTATION",
+      "links": [
+        { "name": "Arch Wiki", "url": "https://wiki.archlinux.org" },
+        { "name": "Proxmox Docs", "url": "https://pve.proxmox.com/wiki" }
+      ]
+    }
+  ],
+  "theme": {
+    "surface": "#fcf9f8",
+    "surfaceContainerLow": "#f0eded",
+    "onSurface": "#1b1c1c",
+    "onSurfaceVariant": "#58413d",
+    "outline": "#8b716b",
+    "outlineVariant": "#dfc0b9",
+    "primary": "#a83820",
+    "primaryContainer": "#ff7759",
+    "onPrimary": "#ffffff",
+    "background": "#fcf9f8"
+  }
+}

@@ -1,0 +1,8 @@
+homehub
+web/node_modules
+web/dist
+design
+.claude
+.git
+*.md
+Makefile
