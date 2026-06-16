@@ -3,10 +3,11 @@ import type { SearchEngine } from '../types'
 
 interface Props {
   engines: SearchEngine[]
+  query: string
+  onQueryChange: (q: string) => void
 }
 
-export function SearchBar({ engines }: Props) {
-  const [query, setQuery] = useState('')
+export function SearchBar({ engines, query, onQueryChange }: Props) {
   const [activeEngine, setActiveEngine] = useState<SearchEngine | null>(
     engines.length > 0 ? engines[0] : null,
   )
@@ -14,6 +15,18 @@ export function SearchBar({ engines }: Props) {
 
   useEffect(() => {
     inputRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if (e.key !== '/') return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return
+      e.preventDefault()
+      inputRef.current?.focus()
+    }
+    window.addEventListener('keydown', handleGlobalKey)
+    return () => window.removeEventListener('keydown', handleGlobalKey)
   }, [])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -24,7 +37,7 @@ export function SearchBar({ engines }: Props) {
     for (const eng of engines) {
       if (query.trim() === eng.prefix) {
         setActiveEngine(eng)
-        setQuery('')
+        onQueryChange('')
         e.preventDefault()
         return
       }
@@ -51,7 +64,7 @@ export function SearchBar({ engines }: Props) {
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => onQueryChange(e.target.value)}
             onKeyDown={handleKeyDown}
             className="w-full bg-transparent border-none outline-none focus:ring-0 text-[16px] leading-6 placeholder:opacity-50"
             style={{
@@ -69,7 +82,7 @@ export function SearchBar({ engines }: Props) {
               color: 'var(--color-on-surface-variant)',
             }}
           >
-            CMD + K
+/
           </kbd>
         </div>
       </div>

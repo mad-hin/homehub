@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useConfig } from './hooks/useConfig'
 import { useLayout } from './hooks/useLayout'
 import { useHealth } from './hooks/useHealth'
@@ -19,11 +19,25 @@ export default function App() {
   const [editMode, setEditMode] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [addToCategory, setAddToCategory] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const handleAddToCategory = (catName: string) => {
     setAddToCategory(catName)
     setShowAddModal(true)
   }
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (showAddModal) {
+        setShowAddModal(false)
+        return
+      }
+      if (editMode) setEditMode(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [editMode, showAddModal])
 
   const handleAdd = (app: App) => {
     addUserApp({ ...app, category: addToCategory })
@@ -42,6 +56,22 @@ export default function App() {
     }
     return cats
   }, [config.categories, userApps])
+
+  const filteredCategories = useMemo((): Category[] => {
+    if (!searchQuery.trim()) return mergedCategories
+    const q = searchQuery.toLowerCase()
+    return mergedCategories
+      .map((c) => ({
+        ...c,
+        apps: c.apps.filter(
+          (a) =>
+            a.name.toLowerCase().includes(q) ||
+            a.label.toLowerCase().includes(q) ||
+            a.url.toLowerCase().includes(q),
+        ),
+      }))
+      .filter((c) => c.apps.length > 0)
+  }, [mergedCategories, searchQuery])
 
   if (loading) {
     return (
@@ -71,10 +101,14 @@ export default function App() {
 
         <Greeter greeting={config.greeting} />
 
-        <SearchBar engines={config.search.engines} />
+        <SearchBar
+          engines={config.search.engines}
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+        />
 
         <CategorySection
-          categories={mergedCategories}
+          categories={filteredCategories}
           statuses={statuses}
           editMode={editMode}
           order={order}
