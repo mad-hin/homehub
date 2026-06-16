@@ -136,7 +136,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen">
       {/* Edit mode banner offset */}
       {editMode && <div className="h-8" />}
 
@@ -175,6 +175,23 @@ export default function App() {
         />
 
         <BookmarkSection groups={config.bookmarks} />
+
+        <footer className="mt-16 pt-6 text-center"
+          style={{ borderTop: '1px solid var(--color-hairline)' }}
+        >
+          <span className="design-label text-(--color-outline)">
+            Powered by{' '}
+            <a
+              href="https://github.com/mad-hin/homehub"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-(--color-primary) hover:underline"
+              style={{ textDecoration: 'none' }}
+            >
+              Homehub
+            </a>
+          </span>
+        </footer>
       </main>
 
       <EditModeToggle editMode={editMode} onToggle={handleToggleEdit} />

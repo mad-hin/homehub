@@ -55,7 +55,7 @@ body {
 .design-shell {
   max-width: 1152px;
   margin: 0 auto;
-  padding: 40px 16px 112px;
+  padding: 40px 16px 80px;
 }
 
 @media (min-width: 768px) {

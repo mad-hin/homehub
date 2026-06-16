@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"sync"
+	"time"
 )
 
 type App struct {
@@ -60,8 +61,9 @@ type Config struct {
 	Bookmarks  []BookmarkGroup `json:"bookmarks"`
 	Theme      Theme           `json:"theme"`
 
-	mu   sync.RWMutex
-	path string
+	mu      sync.RWMutex
+	path    string
+	modTime time.Time
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -100,10 +102,22 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
+	if info, err := os.Stat(path); err == nil {
+		cfg.modTime = info.ModTime()
+	}
+
 	return cfg, nil
 }
 
 func (c *Config) Reload() error {
+	info, err := os.Stat(c.path)
+	if err != nil {
+		return err
+	}
+	if !info.ModTime().After(c.modTime) {
+		return nil // unchanged
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -122,6 +136,7 @@ func (c *Config) Reload() error {
 	c.Categories = fresh.Categories
 	c.Bookmarks = fresh.Bookmarks
 	c.Theme = fresh.Theme
+	c.modTime = info.ModTime()
 
 	return nil
 }
