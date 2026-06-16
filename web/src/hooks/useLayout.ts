@@ -8,7 +8,7 @@ function load(): UserLayout {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch { /* ignore */ }
-  return { order: [], userApps: [], categories: [] }
+  return { order: [], userApps: [], categories: [], categoriesOrder: [] }
 }
 
 function save(l: UserLayout) {
@@ -68,5 +68,31 @@ export function useLayout(serverCats: Category[]) {
 
   const isUserApp = useCallback((app: App) => layout.userApps.some((a) => appKey(a) === appKey(app)), [layout.userApps])
 
-  return { allApps, reorder, addUserApp, removeUserApp, isUserApp, order: layout.order, userApps: layout.userApps }
+  const addUserCategory = useCallback((cat: Category) => {
+    setLayout((prev) => {
+      const n = {
+        ...prev,
+        categories: [...prev.categories, cat],
+        categoriesOrder: [...(prev.categoriesOrder || []), cat.name],
+      }
+      save(n); return n
+    })
+  }, [])
+
+  const reorderCategories = useCallback((o: string[]) => {
+    setLayout((prev) => {
+      const n = { ...prev, categoriesOrder: o }
+      save(n); return n
+    })
+  }, [])
+
+  return {
+    allApps, reorder, addUserApp, removeUserApp, isUserApp,
+    order: layout.order,
+    userApps: layout.userApps,
+    userCategories: layout.categories,
+    addUserCategory,
+    categoriesOrder: layout.categoriesOrder || [],
+    reorderCategories,
+  }
 }

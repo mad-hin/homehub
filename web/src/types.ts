@@ -67,6 +67,7 @@ export interface UserLayout {
   order: string[]
   userApps: App[]
   categories: Category[]
+  categoriesOrder: string[]
 }
 
 export type StatusMap = Record<string, AppStatus>
