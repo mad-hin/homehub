@@ -28,30 +28,27 @@ export function useConfig() {
   useEffect(() => {
     let cancelled = false
 
-    const load = () => {
-      fetch('/api/config')
-        .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`)
-          return res.json()
-        })
-        .then((data: Config) => {
-          if (cancelled) return
-          setConfig(data)
-          applyTheme(data.theme)
-          setError(null)
-        })
-        .catch((err) => {
-          if (cancelled) return
-          setError(err.message)
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false)
-        })
+    const apply = (data: Config) => {
+      if (cancelled) return
+      setConfig(data)
+      applyTheme(data.theme)
+      setError(null)
+      setLoading(false)
     }
 
-    load()
-    const id = setInterval(load, 3000)
-    return () => { cancelled = true; clearInterval(id) }
+    const es = new EventSource('/api/events')
+    es.addEventListener('config', (e) => {
+      try {
+        const data = JSON.parse((e as MessageEvent).data) as Config
+        apply(data)
+      } catch { /* ignore malformed event */ }
+    })
+    es.addEventListener('error', () => {
+      // EventSource auto-reconnects; surface a hint if initial load fails.
+      if (!cancelled) setError('connection lost (retrying)')
+    })
+
+    return () => { cancelled = true; es.close() }
   }, [])
 
   return { config, loading, error }

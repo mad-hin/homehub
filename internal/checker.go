@@ -20,43 +20,77 @@ type Checker struct {
 	results  map[string]*AppStatus
 	client   *http.Client
 	interval time.Duration
+	onChange func(map[string]*AppStatus)
 }
 
-func NewChecker(interval time.Duration) *Checker {
+func NewChecker(interval time.Duration, onChange func(map[string]*AppStatus)) *Checker {
 	return &Checker{
 		results: make(map[string]*AppStatus),
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 		interval: interval,
+		onChange: onChange,
 	}
 }
 
 func (ch *Checker) Start(getURLs func() []string) {
 	go func() {
-		ch.checkAll(getURLs())
+		if changed := ch.checkAll(getURLs()); changed && ch.onChange != nil {
+			ch.onChange(ch.Results())
+		}
 
 		ticker := time.NewTicker(ch.interval)
 		defer ticker.Stop()
 		for range ticker.C {
-			ch.checkAll(getURLs())
+			if changed := ch.checkAll(getURLs()); changed && ch.onChange != nil {
+				ch.onChange(ch.Results())
+			}
 		}
 	}()
 }
 
-func (ch *Checker) checkAll(urls []string) {
+// checkAll probes all URLs concurrently and reports whether any tracked
+// status meaningfully changed (online/offline flips, status-code changes,
+// added or removed URLs). Returns true if the stored snapshot differs.
+func (ch *Checker) checkAll(urls []string) bool {
 	var wg sync.WaitGroup
-	for _, url := range urls {
+	probes := make([]*AppStatus, len(urls))
+	for i, url := range urls {
 		wg.Add(1)
-		go func(u string) {
+		go func(i int, u string) {
 			defer wg.Done()
-			ch.checkOne(u)
-		}(url)
+			probes[i] = ch.checkOne(u)
+		}(i, url)
 	}
 	wg.Wait()
+
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+
+	changed := len(urls) != len(ch.results)
+	for _, s := range probes {
+		prev, ok := ch.results[s.URL]
+		if !ok ||
+			prev.Online != s.Online ||
+			prev.StatusCode != s.StatusCode ||
+			prev.Error != s.Error {
+			changed = true
+		}
+	}
+
+	if changed {
+		ch.results = make(map[string]*AppStatus, len(probes))
+		for _, s := range probes {
+			ch.results[s.URL] = s
+		}
+	}
+
+	return changed
 }
 
-func (ch *Checker) checkOne(url string) {
+// checkOne performs a single HEAD probe and returns the resulting status.
+func (ch *Checker) checkOne(url string) *AppStatus {
 	start := time.Now()
 	resp, err := ch.client.Head(url)
 	latency := time.Since(start).Milliseconds()
@@ -76,9 +110,7 @@ func (ch *Checker) checkOne(url string) {
 		status.Online = resp.StatusCode >= 200 && resp.StatusCode < 400
 	}
 
-	ch.mu.Lock()
-	ch.results[url] = status
-	ch.mu.Unlock()
+	return status
 }
 
 func (ch *Checker) Results() map[string]*AppStatus {

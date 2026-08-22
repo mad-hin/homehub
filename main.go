@@ -25,10 +25,15 @@ func main() {
 	log.Printf("loaded config from %s (%d categories, %d bookmark groups)",
 		*configPath, len(cfg.Categories), len(cfg.Bookmarks))
 
-	checker := internal.NewChecker(*checkInterval)
+	srv := internal.NewServer(cfg, nil, staticFS())
+
+	checker := internal.NewChecker(*checkInterval, func(results map[string]*internal.AppStatus) {
+		srv.BroadcastStatus(results)
+	})
 	checker.Start(func() []string { return cfg.AllAppURLs() })
 
-	srv := internal.NewServer(cfg, checker, staticFS())
+	srv.SetChecker(checker)
+	go srv.WatchForChanges(3 * time.Second)
 
 	httpServer := &http.Server{
 		Addr:         ":" + *port,

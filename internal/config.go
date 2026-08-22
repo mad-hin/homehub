@@ -141,11 +141,11 @@ func (c *Config) Reload() error {
 	return nil
 }
 
-func (c *Config) Snapshot() Config {
+func (c *Config) Snapshot() *Config {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	return Config{
+	return &Config{
 		Greeting:   c.Greeting,
 		Search:     c.Search,
 		Categories: c.Categories,
