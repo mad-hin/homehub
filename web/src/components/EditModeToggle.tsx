@@ -1,22 +1,36 @@
 interface Props {
   editMode: boolean
   onToggle: () => void
+  onOpenConfigGen?: () => void
 }
 
-export function EditModeToggle({ editMode, onToggle }: Props) {
+export function EditModeToggle({ editMode, onToggle, onOpenConfigGen }: Props) {
   return (
     <>
       {/* Edit mode banner */}
       {editMode && (
         <div
-          className="fixed top-0 left-0 w-full z-100 flex justify-center items-center gap-2 py-2"
+          className="fixed top-0 left-0 w-full z-100 flex justify-between items-center gap-2 py-2 px-4"
           style={{
             backgroundColor: 'var(--color-primary-container)',
             color: 'var(--color-on-primary-container)',
           }}
         >
-          <span className="material-symbols-outlined text-[14px]">edit</span>
-          <span className="design-label">Layout Configuration Mode</span>
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[14px]">edit</span>
+            <span className="design-label">Layout Configuration Mode</span>
+          </div>
+          {onOpenConfigGen && (
+            <button
+              onClick={onOpenConfigGen}
+              className="flex items-center gap-1 design-label hover:underline"
+              style={{ color: 'inherit' }}
+              title="Generate config.json"
+            >
+              <span className="material-symbols-outlined text-[16px]">note_add</span>
+              Generate config
+            </button>
+          )}
         </div>
       )}
 

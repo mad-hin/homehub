@@ -10,6 +10,7 @@ import { EditModeToggle } from './components/EditModeToggle'
 import { AddSiteModal } from './components/AddSiteModal'
 import { CreateCategoryModal } from './components/CreateCategoryModal'
 import { HelpModal } from './components/HelpModal'
+import { ConfigGenModal } from './components/ConfigGenModal'
 import type { App, Category } from './types'
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showHelp, setShowHelp] = useState(false)
   const [showCreateCat, setShowCreateCat] = useState(false)
+  const [showConfigGen, setShowConfigGen] = useState(false)
 
   const handleAddToCategory = (catName: string) => {
     setAddToCategory(catName)
@@ -61,13 +63,14 @@ export default function App() {
       if (e.key !== 'Escape') return
       if (showHelp) { setShowHelp(false); return }
       if (showCreateCat) { setShowCreateCat(false); return }
+      if (showConfigGen) { setShowConfigGen(false); return }
       if (showAddModal) { setShowAddModal(false); return }
       if (editMode) { handleEscapeEdit(); return }
       if (searchQuery) { setSearchQuery(''); return }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [editMode, showAddModal, showHelp, showCreateCat, searchQuery])
+  }, [editMode, showAddModal, showHelp, showCreateCat, showConfigGen, searchQuery])
 
   const handleAdd = (app: App) => {
     addUserApp({ ...app, category: addToCategory })
@@ -194,7 +197,11 @@ export default function App() {
         </footer>
       </main>
 
-      <EditModeToggle editMode={editMode} onToggle={handleToggleEdit} />
+      <EditModeToggle
+        editMode={editMode}
+        onToggle={handleToggleEdit}
+        onOpenConfigGen={() => setShowConfigGen(true)}
+      />
 
       {showAddModal && (
         <AddSiteModal
@@ -205,6 +212,14 @@ export default function App() {
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+
+      {showConfigGen && (
+        <ConfigGenModal
+          config={config}
+          categories={mergedCategories}
+          onClose={() => setShowConfigGen(false)}
+        />
+      )}
 
       {showCreateCat && (
         <CreateCategoryModal

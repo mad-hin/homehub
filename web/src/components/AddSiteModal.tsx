@@ -76,7 +76,16 @@ export function AddSiteModal({ categoryName, onAdd, onClose }: Props) {
           </div>
           <div>
             <label className="design-label block mb-1 text-(--color-outline)">
-              Icon
+              Icon{' '}
+              <a
+                href="https://fonts.google.com/icons?icon.style=Outlined"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-(--color-primary) normal-case tracking-normal"
+                title="Browse Material Symbols icons"
+              >
+                (browse icons)
+              </a>
             </label>
             <input
               type="text"
