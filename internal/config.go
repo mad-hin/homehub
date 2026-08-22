@@ -3,8 +3,11 @@ package internal
 import (
 	"encoding/json"
 	"os"
+	"strconv"
 	"sync"
 	"time"
+
+	"homehub/internal/eventlog"
 )
 
 type App struct {
@@ -42,16 +45,16 @@ type BookmarkGroup struct {
 }
 
 type Theme struct {
-	Surface            string `json:"surface"`
+	Surface             string `json:"surface"`
 	SurfaceContainerLow string `json:"surfaceContainerLow"`
-	OnSurface          string `json:"onSurface"`
-	OnSurfaceVariant   string `json:"onSurfaceVariant"`
-	Outline            string `json:"outline"`
-	OutlineVariant     string `json:"outlineVariant"`
-	Primary            string `json:"primary"`
-	PrimaryContainer   string `json:"primaryContainer"`
-	OnPrimary          string `json:"onPrimary"`
-	Background         string `json:"background"`
+	OnSurface           string `json:"onSurface"`
+	OnSurfaceVariant    string `json:"onSurfaceVariant"`
+	Outline             string `json:"outline"`
+	OutlineVariant      string `json:"outlineVariant"`
+	Primary             string `json:"primary"`
+	PrimaryContainer    string `json:"primaryContainer"`
+	OnPrimary           string `json:"onPrimary"`
+	Background          string `json:"background"`
 }
 
 type Config struct {
@@ -112,6 +115,7 @@ func LoadConfig(path string) (*Config, error) {
 func (c *Config) Reload() error {
 	info, err := os.Stat(c.path)
 	if err != nil {
+		eventlog.Error("config stat "+c.path, err)
 		return err
 	}
 	if !info.ModTime().After(c.modTime) {
@@ -123,11 +127,13 @@ func (c *Config) Reload() error {
 
 	data, err := os.ReadFile(c.path)
 	if err != nil {
+		eventlog.Error("config read "+c.path, err)
 		return err
 	}
 
 	var fresh Config
 	if err := json.Unmarshal(data, &fresh); err != nil {
+		eventlog.Error("config parse "+c.path, err)
 		return err
 	}
 
@@ -137,6 +143,10 @@ func (c *Config) Reload() error {
 	c.Bookmarks = fresh.Bookmarks
 	c.Theme = fresh.Theme
 	c.modTime = info.ModTime()
+
+	eventlog.Log("config", "reloaded "+c.path+
+		" categories="+strconv.Itoa(len(c.Categories))+
+		" bookmarks="+strconv.Itoa(len(c.Bookmarks)))
 
 	return nil
 }

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"homehub/internal/eventlog"
 )
 
 type Server struct {
@@ -73,12 +75,13 @@ func (s *Server) WatchForChanges(configInterval time.Duration) {
 func (s *Server) publishConfigIfChanged() {
 	if err := s.config.Reload(); err != nil {
 		log.Printf("config reload error: %v", err)
+		// Config.Reload already logged the failure with context.
 	}
 
 	snapshot := s.config.Snapshot()
 	data, err := json.Marshal(snapshot)
 	if err != nil {
-		log.Printf("error marshaling config: %v", err)
+		eventlog.Error("config marshal", err)
 		return
 	}
 
@@ -152,7 +155,7 @@ func (s *Server) configSnapshot() *Config {
 func (s *Server) json(v any) []byte {
 	data, err := json.Marshal(v)
 	if err != nil {
-		log.Printf("error marshaling %+v: %v", v, err)
+		eventlog.Error("json marshal", err)
 		return []byte("null")
 	}
 	return data

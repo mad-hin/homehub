@@ -2,8 +2,11 @@ package internal
 
 import (
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
+
+	"homehub/internal/eventlog"
 )
 
 type AppStatus struct {
@@ -77,6 +80,13 @@ func (ch *Checker) checkAll(urls []string) bool {
 			prev.Error != s.Error {
 			changed = true
 		}
+
+		// Log every probe result (online or offline) with last known state.
+		if s.Online {
+			eventlog.Log("check", "up "+s.URL+" status="+itoa(s.StatusCode)+" latency="+i64(s.LatencyMs)+"ms")
+		} else {
+			eventlog.Log("check", "down "+s.URL+" status="+itoa(s.StatusCode)+" err="+s.Error)
+		}
 	}
 
 	if changed {
@@ -88,6 +98,10 @@ func (ch *Checker) checkAll(urls []string) bool {
 
 	return changed
 }
+
+// itoa / i64 keep event-log formatting concise.
+func itoa(n int) string  { return strconv.Itoa(n) }
+func i64(n int64) string { return strconv.FormatInt(n, 10) }
 
 // checkOne performs a single HEAD probe and returns the resulting status.
 func (ch *Checker) checkOne(url string) *AppStatus {

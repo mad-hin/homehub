@@ -14,3 +14,7 @@ web/node_modules/
 
 # Config (contains personal URLs)
 config.json
+
+# Logs
+logs/
+*.pid

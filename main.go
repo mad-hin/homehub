@@ -10,20 +10,29 @@ import (
 	"time"
 
 	"homehub/internal"
+	"homehub/internal/eventlog"
 )
 
 func main() {
 	port := flag.String("port", "8080", "HTTP port to listen on")
 	configPath := flag.String("config", "config.json", "path to config.json")
 	checkInterval := flag.Duration("interval", 60*time.Second, "health check interval")
+	logDir := flag.String("logdir", "logs", "directory for daily event logs")
 	flag.Parse()
+
+	el, err := eventlog.New(*logDir)
+	if err != nil {
+		log.Fatalf("failed to initialize event logger: %v", err)
+	}
+	eventlog.SetGlobal(el)
+	defer el.Close()
 
 	cfg, err := internal.LoadConfig(*configPath)
 	if err != nil {
+		eventlog.Error("config load "+*configPath, err)
 		log.Fatalf("failed to load config: %v", err)
 	}
-	log.Printf("loaded config from %s (%d categories, %d bookmark groups)",
-		*configPath, len(cfg.Categories), len(cfg.Bookmarks))
+	eventlog.Log("startup", "loaded config "+*configPath)
 
 	srv := internal.NewServer(cfg, nil, staticFS())
 
@@ -44,20 +53,24 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("listening on http://0.0.0.0:%s", *port)
+		eventlog.Log("startup", "listening on http://0.0.0.0:"+*port)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			eventlog.Error("server listen", err)
 			log.Fatalf("server error: %v", err)
 		}
 	}()
 
+	eventlog.Log("startup", "homehub running")
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
-	log.Println("shutting down...")
+	eventlog.Log("shutdown", "signal received")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := httpServer.Shutdown(ctx); err != nil {
+		eventlog.Error("server shutdown", err)
 		log.Fatalf("forced shutdown: %v", err)
 	}
 	log.Println("stopped")
