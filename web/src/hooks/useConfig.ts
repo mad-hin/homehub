@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Config } from '../types'
 
 const FALLBACK: Config = {
@@ -20,18 +20,39 @@ const FALLBACK: Config = {
   },
 }
 
+// normalize guards against partial/legacy payloads (e.g. a config event
+// arriving while config.json is mid-edit): missing arrays become [] and
+// missing theme fields fall back to defaults, so rendering never sees null.
+function normalize(data: Config | null): Config {
+  const src: Partial<Config> = data ?? {}
+  return {
+    greeting: typeof src.greeting === 'string' ? src.greeting : FALLBACK.greeting,
+    search: { engines: Array.isArray(src.search?.engines) ? src.search.engines : [] },
+    categories: Array.isArray(src.categories)
+      ? src.categories.map((c) => ({ ...c, apps: Array.isArray(c.apps) ? c.apps : [] }))
+      : [],
+    bookmarks: Array.isArray(src.bookmarks)
+      ? src.bookmarks.map((g) => ({ ...g, links: Array.isArray(g.links) ? g.links : [] }))
+      : [],
+    theme: { ...FALLBACK.theme, ...(src.theme ?? {}) },
+  }
+}
+
 export function useConfig() {
   const [config, setConfig] = useState<Config>(FALLBACK)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const loadedRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
 
     const apply = (data: Config) => {
       if (cancelled) return
-      setConfig(data)
-      applyTheme(data.theme)
+      const next = normalize(data)
+      loadedRef.current = true
+      setConfig(next)
+      applyTheme(next.theme)
       setError(null)
       setLoading(false)
     }
@@ -44,8 +65,10 @@ export function useConfig() {
       } catch { /* ignore malformed event */ }
     })
     es.addEventListener('error', () => {
-      // EventSource auto-reconnects; surface a hint if initial load fails.
-      if (!cancelled) setError('connection lost (retrying)')
+      // EventSource auto-reconnects; once we have a config, transient drops
+      // (proxy timeouts, server restarts) are invisible. Only surface an
+      // error if the initial load never succeeded.
+      if (!cancelled && !loadedRef.current) setError('connection lost (retrying)')
     })
 
     return () => { cancelled = true; es.close() }

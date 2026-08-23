@@ -18,7 +18,7 @@ export default function App() {
   const {
     reorder, addUserApp, removeUserApp, isUserApp,
     order, userApps, userCategories, addUserCategory,
-    categoriesOrder, reorderCategories,
+    categoriesOrder, reorderCategories, resetLayout,
   } = useLayout(config.categories)
   const statuses = useHealth()
   const [editMode, setEditMode] = useState(false)
@@ -54,8 +54,7 @@ export default function App() {
       localStorage.removeItem('homehub-layout-backup')
     }
     setEditMode(false)
-    // Force reload layout state
-    window.location.reload()
+    resetLayout() // re-read layout from localStorage — no full page reload
   }
 
   useEffect(() => {

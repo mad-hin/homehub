@@ -69,6 +69,31 @@ type Config struct {
 	modTime time.Time
 }
 
+// normalizeConfig replaces nil slices with empty ones so JSON always
+// serializes arrays as [] instead of null. The frontend relies on this
+// contract (config events, /api/config, hot reloads).
+func normalizeConfig(c *Config) {
+	if c.Categories == nil {
+		c.Categories = []Category{}
+	}
+	if c.Bookmarks == nil {
+		c.Bookmarks = []BookmarkGroup{}
+	}
+	if c.Search.Engines == nil {
+		c.Search.Engines = []SearchEngine{}
+	}
+	for i := range c.Categories {
+		if c.Categories[i].Apps == nil {
+			c.Categories[i].Apps = []App{}
+		}
+	}
+	for i := range c.Bookmarks {
+		if c.Bookmarks[i].Links == nil {
+			c.Bookmarks[i].Links = []BookmarkLink{}
+		}
+	}
+}
+
 func LoadConfig(path string) (*Config, error) {
 	cfg := &Config{
 		Greeting: "Good afternoon, User.",
@@ -104,6 +129,7 @@ func LoadConfig(path string) (*Config, error) {
 	if err := json.Unmarshal(data, cfg); err != nil {
 		return nil, err
 	}
+	normalizeConfig(cfg)
 
 	if info, err := os.Stat(path); err == nil {
 		cfg.modTime = info.ModTime()
@@ -136,6 +162,7 @@ func (c *Config) Reload() error {
 		eventlog.Error("config parse "+c.path, err)
 		return err
 	}
+	normalizeConfig(&fresh)
 
 	c.Greeting = fresh.Greeting
 	c.Search = fresh.Search

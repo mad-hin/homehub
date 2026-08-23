@@ -3,12 +3,24 @@ import type { App, Category, UserLayout } from '../types'
 
 const STORAGE_KEY = 'homehub-layout'
 
+const EMPTY: UserLayout = { order: [], userApps: [], categories: [], categoriesOrder: [] }
+
 function load(): UserLayout {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const p = JSON.parse(raw)
+      // Sanitize: stale layouts from older versions may be missing fields or
+      // have null arrays, which would crash rendering (e.g. order.length).
+      return {
+        order: Array.isArray(p.order) ? p.order : [],
+        userApps: Array.isArray(p.userApps) ? p.userApps : [],
+        categories: Array.isArray(p.categories) ? p.categories : [],
+        categoriesOrder: Array.isArray(p.categoriesOrder) ? p.categoriesOrder : [],
+      }
+    }
   } catch { /* ignore */ }
-  return { order: [], userApps: [], categories: [], categoriesOrder: [] }
+  return EMPTY
 }
 
 function save(l: UserLayout) {
@@ -86,6 +98,10 @@ export function useLayout(serverCats: Category[]) {
     })
   }, [])
 
+  const reset = useCallback(() => {
+    setLayout(load())
+  }, [])
+
   return {
     allApps, reorder, addUserApp, removeUserApp, isUserApp,
     order: layout.order,
@@ -94,5 +110,6 @@ export function useLayout(serverCats: Category[]) {
     addUserCategory,
     categoriesOrder: layout.categoriesOrder || [],
     reorderCategories,
+    resetLayout: reset,
   }
 }

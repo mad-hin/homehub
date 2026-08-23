@@ -121,12 +121,22 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	s.sendEvent(w, flusher, Event{Name: "config", Data: s.json(s.configSnapshot())})
 	s.sendEvent(w, flusher, Event{Name: "status", Data: s.json(s.checker.Results())})
 
+	// Heartbeat keeps the stream alive through proxies (e.g. Cloudflare cuts
+	// idle connections after ~100s). SSE comments are ignored by EventSource.
+	heartbeat := time.NewTicker(30 * time.Second)
+	defer heartbeat.Stop()
+
 	for {
 		select {
 		case ev := <-ch:
 			if !s.sendEvent(w, flusher, ev) {
 				return
 			}
+		case <-heartbeat.C:
+			if _, err := fmt.Fprintf(w, ": ping\n\n"); err != nil {
+				return
+			}
+			flusher.Flush()
 		case <-r.Context().Done():
 			return
 		}
